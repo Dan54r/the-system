@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="System">
+<meta name="theme-color" content="#03050b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>The System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #03050b;
+    --panel: #081630;
+    --panel2: #0e2246;
+    --edge: rgba(80, 190, 255, 0.55);
+    --blue: #4cc9ff;
+    --blue-soft: rgba(76, 201, 255, 0.15);
+    --glow: rgba(76, 201, 255, 0.5);
+    --text: #e3f4ff;
+    --muted: #7d9bbd;
+    --gold: #ffd257;
+    --red: #ff4b5c;
+    --hfont: "Orbitron", "Segoe UI", sans-serif;
+    --bfont: "Rajdhani", -apple-system, "Segoe UI", sans-serif;
+    --tabh: 64px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0; color: var(--text); font-family: var(--bfont); font-size: 16px;
+    padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + var(--tabh) + 24px);
+    -webkit-user-select: none; user-select: none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(40, 110, 255, 0.25), transparent 55%) no-repeat, var(--bg);
+  }
+  .wrap { max-width: 460px; margin: 0 auto; }
+  .hidden { display: none !important; }
+
+  /* ---------- System panel ---------- */
+  .panel {
+    position: relative; background: var(--panel); border: 1px solid var(--edge); border-radius: 6px;
+    padding: 16px 14px 14px; margin-bottom: 16px;
+    box-shadow: 0 0 16px rgba(76, 201, 255, 0.2), inset 0 0 20px rgba(76, 201, 255, 0.07);
+  }
+  .panel::before, .panel::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--blue); }
+  .panel::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+  .panel::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+  .ptitle {
+    font-family: var(--hfont); font-size: 12px; font-weight: 700; letter-spacing: 3px; color: var(--blue);
+    text-align: center; margin-bottom: 12px; text-shadow: 0 0 8px var(--glow);
+  }
+  .ptitle::before { content: "[ "; opacity: 0.7; }
+  .ptitle::after { content: " ]"; opacity: 0.7; }
+
+  /* ---------- status ---------- */
+  .status-top { display: flex; align-items: center; justify-content: space-between; }
+  .name { font-family: var(--hfont); font-size: 20px; font-weight: 700; letter-spacing: 2px; cursor: pointer; }
+  .name small { display: block; font-family: var(--bfont); font-size: 12px; color: var(--muted); letter-spacing: 1px; font-weight: 600; }
+  .lvl { text-align: right; }
+  .lvl .n { font-family: var(--hfont); font-size: 40px; font-weight: 900; line-height: 1; text-shadow: 0 0 14px var(--glow); }
+  .lvl .t { font-family: var(--hfont); font-size: 10px; letter-spacing: 3px; color: var(--muted); }
+  .xpbar { height: 8px; background: rgba(76,201,255,0.12); border-radius: 2px; overflow: hidden; margin-top: 14px; border: 1px solid rgba(76,201,255,0.3); }
+  .xpfill { height: 100%; width: 0; background: linear-gradient(90deg, #2f7bff, var(--blue)); }
+  .xptext { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; }
+
+  /* ---------- quests ---------- */
+  .quests { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .quests .panel { margin-bottom: 0; padding: 14px 12px 12px; }
+  .bignum { font-family: var(--hfont); font-size: 42px; font-weight: 900; text-align: center; line-height: 1.1; text-shadow: 0 0 12px var(--glow); }
+  .bignum.off { color: var(--muted); text-shadow: none; }
+  .sub { font-size: 13px; color: var(--muted); font-weight: 600; text-align: center; }
+  .msg { font-size: 13px; font-weight: 700; text-align: center; margin-top: 6px; color: var(--muted); }
+  .msg.good { color: var(--blue); }
+  .msg.warn { color: var(--gold); }
+  .msg.bad { color: var(--red); }
+  .ring-wrap { position: relative; width: 88px; height: 88px; margin: 0 auto; }
+  .ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .ring-bg { stroke: rgba(76,201,255,0.12); }
+  .ring-fg { stroke: var(--blue); stroke-linecap: round; }
+  .ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--hfont); font-size: 24px; font-weight: 900; }
+  .ring-center small { font-size: 14px; color: var(--muted); }
+
+  /* ---------- calendar ---------- */
+  .month-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .month-head h2 { font-family: var(--hfont); font-size: 15px; font-weight: 700; letter-spacing: 2px; margin: 0; text-transform: uppercase; }
+  .btn {
+    background: var(--panel2); color: var(--blue); border: 1px solid var(--edge); border-radius: 4px;
+    font-family: var(--hfont); font-weight: 700; cursor: pointer;
+  }
+  .btn.primary { background: linear-gradient(160deg, #3fd2ff, #2a6cff); color: #021022; border-color: #9fe6ff; }
+  .btn.ghost { color: var(--muted); border-color: rgba(125,155,189,0.4); }
+  .arrow { width: 40px; height: 40px; font-size: 20px; }
+  .dows, .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .dows { padding: 0 5px; }
+  .dow { text-align: center; font-family: var(--hfont); font-size: 10px; color: var(--muted); padding: 4px 0; }
+  .week { padding: 3px 5px; border-radius: 4px; margin-bottom: 2px; border: 1px solid transparent; }
+  .week.hit { background: var(--blue-soft); border-color: rgba(76,201,255,0.35); }
+  .day {
+    aspect-ratio: 1; border: 1px solid rgba(76,201,255,0.18); border-radius: 4px; background: var(--panel2);
+    color: var(--text); font-family: var(--bfont); font-size: 16px; font-weight: 700; cursor: pointer; padding: 0;
+  }
+  .day.done { background: linear-gradient(160deg, #3fd2ff, #2a6cff); color: #021022; border-color: #9fe6ff; }
+  .day.today { outline: 2px solid var(--text); outline-offset: -2px; }
+  .day.future { opacity: 0.28; cursor: default; }
+  .empty { aspect-ratio: 1; }
+  .totals { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .totals b { color: var(--text); }
+
+  /* ---------- skills list ---------- */
+  .skill-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; cursor: pointer;
+    background: var(--panel2); border: 1px solid rgba(76,201,255,0.25); border-radius: 4px;
+    padding: 12px; margin-bottom: 8px; color: var(--text); font-family: var(--bfont);
+  }
+  .skill-row.mastered { border-color: var(--gold); }
+  .skill-row .info { flex: 1; min-width: 0; }
+  .skill-row .nm { font-size: 18px; font-weight: 700; }
+  .skill-row .meta { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .skill-row .bar { height: 4px; background: rgba(76,201,255,0.12); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .skill-row .bar div { height: 100%; background: var(--blue); }
+  .skill-row.mastered .bar div { background: var(--gold); }
+  .badge {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(125,155,189,0.5);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; color: transparent; flex-shrink: 0;
+  }
+  .mastered .badge { border-color: var(--gold); background: var(--gold); color: #1a1300; }
+  .tag { font-family: var(--hfont); font-size: 9px; letter-spacing: 1.5px; padding: 2px 6px; border-radius: 3px; border: 1px solid currentColor; margin-left: 6px; vertical-align: middle; }
+  .tag.b { color: #5fe08a; } .tag.i { color: var(--blue); } .tag.a { color: #b48cff; }
+  .note { font-size: 14px; color: var(--muted); font-weight: 600; text-align: center; margin: 4px 0 12px; }
+
+  /* ---------- skill detail ---------- */
+  .back { padding: 8px 14px; font-size: 12px; letter-spacing: 2px; margin-bottom: 14px; }
+  .d-title { font-family: var(--hfont); font-size: 22px; font-weight: 900; text-align: center; margin: 0 0 4px; text-shadow: 0 0 12px var(--glow); }
+  .d-sub { text-align: center; margin-bottom: 14px; }
+  .label { font-family: var(--hfont); font-size: 11px; letter-spacing: 2px; color: var(--blue); margin: 14px 0 6px; }
+  .label:first-child { margin-top: 0; }
+  .text { font-size: 16px; font-weight: 600; line-height: 1.35; }
+  .step {
+    display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; cursor: pointer;
+    background: var(--panel2); border: 1px solid rgba(76,201,255,0.2); border-radius: 4px; padding: 11px 12px; margin-bottom: 8px;
+    color: var(--text); font-family: var(--bfont);
+  }
+  .step .box {
+    width: 22px; height: 22px; border: 2px solid var(--edge); border-radius: 3px; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: transparent;
+  }
+  .step.done { border-color: rgba(76,201,255,0.5); }
+  .step.done .box { background: var(--blue); border-color: var(--blue); color: #021022; }
+  .step .sn { font-size: 16px; font-weight: 700; }
+  .step .sd { font-size: 14px; color: var(--muted); font-weight: 600; margin-top: 2px; line-height: 1.3; }
+  .step .sd b { color: var(--blue); font-weight: 700; }
+  .master-btn { width: 100%; padding: 14px; font-size: 14px; letter-spacing: 2px; margin-top: 8px; }
+  .master-btn.done { background: var(--gold); color: #1a1300; border-color: var(--gold); }
+  .safety { font-size: 13px; color: var(--muted); text-align: center; margin-top: 12px; font-weight: 600; }
+
+  /* ---------- bottom tabs ---------- */
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    display: flex; background: #050b18; border-top: 1px solid var(--edge);
+    padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 16px rgba(76,201,255,0.12);
+  }
+  .tab {
+    flex: 1; height: var(--tabh); background: none; border: none; cursor: pointer; color: var(--muted);
+    font-family: var(--hfont); font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  }
+  .tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tab.active { color: var(--blue); text-shadow: 0 0 8px var(--glow); }
+  .tab.active svg { filter: drop-shadow(0 0 5px var(--glow)); }
+
+  /* ---------- urgent quest card ---------- */
+  .urgent-card { border-color: rgba(255,75,92,0.7); box-shadow: 0 0 16px rgba(255,75,92,0.25), inset 0 0 20px rgba(255,75,92,0.08); }
+  .urgent-card::before, .urgent-card::after { border-color: var(--red); }
+  .urgent-card .ptitle { color: var(--red); text-shadow: 0 0 8px rgba(255,75,92,0.5); }
+  .u-task { font-family: var(--hfont); font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 6px; }
+  .u-meta { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 12px; }
+  .u-meta .xp { color: var(--blue); }
+  .u-btns { display: flex; gap: 8px; }
+  .u-btns .btn { flex: 1; padding: 12px; font-size: 12px; letter-spacing: 2px; }
+
+  /* ---------- profile ---------- */
+  .records { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rec { background: var(--panel2); border: 1px solid rgba(76,201,255,0.25); border-radius: 4px; padding: 12px 8px; text-align: center; }
+  .rec .v { font-family: var(--hfont); font-size: 26px; font-weight: 900; text-shadow: 0 0 10px var(--glow); }
+  .rec .k { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .xp-list div { display: flex; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid rgba(76,201,255,0.12); font-size: 16px; font-weight: 600; }
+  .xp-list div:last-child { border-bottom: none; }
+  .xp-list b { font-family: var(--hfont); color: var(--blue); }
+  .xp-list .pen b { color: var(--red); }
+  .wide { width: 100%; padding: 14px; font-size: 13px; letter-spacing: 2px; margin-top: 12px; }
+  .wide:disabled { opacity: 0.4; }
+  .notif-text { font-size: 16px; font-weight: 600; line-height: 1.35; text-align: center; }
+  .notif-text.good { color: var(--blue); }
+  #notifCode {
+    width: 100%; height: 90px; margin-top: 6px; padding: 10px; resize: none; font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+    background: #030a18; color: var(--muted); border: 1px solid var(--edge); border-radius: 4px; word-break: break-all;
+    -webkit-user-select: text; user-select: text;
+  }
+  .small-note { font-size: 13px; color: var(--muted); font-weight: 600; text-align: center; margin-top: 8px; }
+
+  /* ---------- System pop-up ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0, 4, 12, 0.75); display: none;
+    align-items: center; justify-content: center; z-index: 40; padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .sys { width: 100%; max-width: 360px; text-align: center; padding: 20px 18px 18px; margin: 0; }
+  .sys .head { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .sys .icon {
+    width: 22px; height: 22px; border: 2px solid var(--blue); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--hfont); font-size: 13px; font-weight: 900; color: var(--blue);
+  }
+  .sys .kicker { font-family: var(--hfont); font-size: 13px; letter-spacing: 3px; font-weight: 700; color: var(--blue); }
+  .sys h3 { font-family: var(--hfont); font-size: 22px; font-weight: 900; margin: 10px 0 8px; text-shadow: 0 0 14px var(--glow); }
+  .sys .body { font-size: 17px; font-weight: 600; line-height: 1.35; }
+  .sys .body .hl { color: var(--blue); }
+  .sys .body .red { color: var(--red); }
+  .sys input {
+    width: 100%; margin-top: 12px; padding: 12px; font-family: var(--hfont); font-size: 20px; text-align: center;
+    background: #030a18; color: var(--text); border: 1px solid var(--edge); border-radius: 4px; outline: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  .sys .btns { display: flex; gap: 8px; margin-top: 16px; }
+  .sys .btns .btn { flex: 1; padding: 12px; font-size: 13px; letter-spacing: 2px; }
+  .sys.red { border-color: rgba(255,75,92,0.7); box-shadow: 0 0 20px rgba(255,75,92,0.3); }
+  .sys.red::before, .sys.red::after { border-color: var(--red); }
+  .sys.red .kicker, .sys.red .icon { color: var(--red); border-color: var(--red); }
+  .sys.gold h3 { color: var(--gold); text-shadow: 0 0 16px rgba(255,210,87,0.6); }
+  .sys.gold .kicker, .sys.gold .icon { color: var(--gold); border-color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="panel sys" id="sys">
+    <div class="head"><span class="icon">!</span><span class="kicker" id="sysKicker">NOTIFICATION</span></div>
+    <h3 id="sysTitle"></h3>
+    <div class="body" id="sysBody"></div>
+    <div id="sysExtra"></div>
+    <div class="btns" id="sysBtns"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- ===== QUESTS TAB ===== -->
+  <div id="tabQuests">
+    <div class="panel urgent-card hidden" id="urgentCard">
+      <div class="ptitle">URGENT QUEST</div>
+      <div class="u-task" id="uTask"></div>
+      <div class="u-meta"><span id="uTime"></span><span class="xp" id="uXp"></span></div>
+      <div class="u-btns">
+        <button class="btn ghost" id="uGiveUp">GIVE UP</button>
+        <button class="btn primary" id="uDone">COMPLETE</button>
+      </div>
+    </div>
+
+    <div class="quests">
+      <div class="panel">
+        <div class="ptitle">STREAK</div>
+        <div class="bignum" id="streak">0</div>
+        <div class="sub" id="streakUnit">sessions</div>
+        <div class="msg" id="restInfo"></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">WEEKLY</div>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="42" fill="none" stroke-width="10"/>
+            <circle class="ring-fg" id="ring" cx="50" cy="50" r="42" fill="none" stroke-width="10"/>
+          </svg>
+          <div class="ring-center"><span id="weekCount">0</span><small>/3</small></div>
+        </div>
+        <div class="msg" id="weekInfo"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">QUEST LOG</div>
+      <div class="month-head">
+        <button class="btn arrow" id="prev" aria-label="Previous month">‹</button>
+        <h2 id="monthName"></h2>
+        <button class="btn arrow" id="next" aria-label="Next month">›</button>
+      </div>
+      <div class="dows" id="dows"></div>
+      <div id="weeks"></div>
+      <div class="totals">
+        <span>Sessions this month: <b id="monthTotal">0</b></span>
+        <span>Weeks cleared: <b id="weeksHit">0</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SKILLS TAB ===== -->
+  <div id="tabSkills" class="hidden">
+    <div id="skillListView">
+      <div class="panel">
+        <div class="ptitle">SKILLS</div>
+        <div class="note" id="skillCount"></div>
+        <div id="skillList"></div>
+      </div>
+    </div>
+    <div id="skillDetailView" class="hidden">
+      <button class="btn back" id="backBtn">‹ SKILLS</button>
+      <div class="panel" id="skillDetail"></div>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE TAB ===== -->
+  <div id="tabProfile" class="hidden">
+    <div class="panel">
+      <div class="ptitle">STATUS</div>
+      <div class="status-top">
+        <div class="name" id="playerName">DAN<small>PLAYER</small></div>
+        <div class="lvl"><div class="n" id="level">1</div><div class="t">LEVEL</div></div>
+      </div>
+      <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
+      <div class="xptext"><span>EXP</span><span id="xpText"></span></div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">RECORDS</div>
+      <div class="records">
+        <div class="rec"><div class="v" id="recSessions">0</div><div class="k">Total sessions</div></div>
+        <div class="rec"><div class="v" id="recBest">0</div><div class="k">Best streak</div></div>
+        <div class="rec"><div class="v" id="recWeeks">0</div><div class="k">Weeks cleared</div></div>
+        <div class="rec"><div class="v" id="recSkills">0</div><div class="k">Skills mastered</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">EXP REWARDS</div>
+      <div class="xp-list">
+        <div><span>Training session</span><b>+40</b></div>
+        <div><span>Weekly quest cleared</span><b>+60</b></div>
+        <div><span>Skill mastered</span><b>+150</b></div>
+        <div><span>Urgent quest</span><b>+20 to +40</b></div>
+        <div class="pen"><span>Missed weekly quest</span><b>−80</b></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">NOTIFICATIONS</div>
+      <div class="notif-text" id="notifStatus"></div>
+      <button class="btn primary wide" id="notifBtn">TURN ON NOTIFICATIONS</button>
+      <div id="notifCodeWrap" class="hidden">
+        <div class="label">YOUR PUSH CODE</div>
+        <textarea id="notifCode" readonly></textarea>
+        <button class="btn wide" id="copyBtn">COPY CODE</button>
+        <div class="small-note">Paste this into GitHub as a secret called PUSH_CONFIG.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="quests">
+    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8.5 15l2.2 2.2 4.8-4.8"/></svg>
+    QUESTS
+  </button>
+  <button class="tab" data-tab="skills">
+    <svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+    SKILLS
+  </button>
+  <button class="tab" data-tab="profile">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+    PROFILE
+  </button>
+</nav>
+
+<script>
+  const MAX_REST = 2;
+  const WEEK_GOAL = 3;
+  const XP = { session: 40, week: 60, penalty: 80, skill: 150 };
+  // EXP needed for each level: 300, then +150 more every level (300, 450, 600 ...)
+  const levelNeed = lvl => 300 + 150 * (lvl - 1);
+
+  /* ================= skills ================= */
+  const SKILLS = [
+    {
+      id: "crow", name: "Crow Pose", level: "b",
+      goal: "Hold a crow pose for 30 seconds.",
+      steps: [
+        { n: "Weight shift", d: "Squat, hands flat shoulder-width, rock your weight forward onto your hands. <b>3 × 20s</b>" },
+        { n: "One foot up", d: "Knees on the backs of your upper arms, lift one foot at a time. <b>3 × 10s each</b>" },
+        { n: "Both feet up", d: "Lean further forward until both feet float. <b>3 × 5–10s</b>" },
+        { n: "Build the hold", d: "Add a few seconds each session. <b>Up to 30s</b>" }
+      ],
+      tip: "Look slightly ahead, not down. Put a pillow in front of your face while learning."
+    },
+    {
+      id: "lsit", name: "L-Sit", level: "b",
+      goal: "Hold an L-sit for 20 seconds on the floor or parallettes.",
+      steps: [
+        { n: "Support hold", d: "Arms straight on dip bars, parallettes or two chairs, shoulders pushed down. <b>3 × 30s</b>" },
+        { n: "Tuck L-sit", d: "Lift both knees to your chest and hold. <b>3 × 15s</b>" },
+        { n: "One leg out", d: "From the tuck, straighten one leg, then switch. <b>3 × 10s each</b>" },
+        { n: "Full L-sit", d: "Both legs straight out in front, toes pointed. <b>3 × 5–10s, build to 20s</b>" }
+      ],
+      tip: "Push the floor away hard. Seated leg lifts build the compression strength you need."
+    },
+    {
+      id: "pistol", name: "Pistol Squat", level: "i",
+      goal: "5 clean pistol squats on each leg.",
+      steps: [
+        { n: "Deep squat", d: "Full-depth bodyweight squats, heels down. <b>3 × 15</b>" },
+        { n: "Box pistol", d: "Single-leg squat down to a bench or box, then stand. <b>3 × 6 each</b>" },
+        { n: "Assisted pistol", d: "Hold a door frame or pole lightly for balance. <b>3 × 5 each</b>" },
+        { n: "Slow negatives", d: "Lower on one leg over 3–4 seconds, stand up on two. <b>3 × 3 each</b>" },
+        { n: "Full pistol", d: "No help, all the way down and back up. <b>Build to 5 each</b>" }
+      ],
+      tip: "Holding a small weight out in front makes balancing much easier while you learn."
+    },
+    {
+      id: "handstand", name: "Handstand", level: "i",
+      goal: "Hold a freestanding handstand for 30 seconds.",
+      steps: [
+        { n: "Wall walk plank", d: "Feet on the wall, walk your hands in until you're nearly vertical. <b>3 × 30s</b>" },
+        { n: "Chest-to-wall hold", d: "Belly facing the wall, body in one straight line. <b>3 × 30–60s</b>" },
+        { n: "Toe pulls", d: "In the wall hold, pull your toes off the wall and balance. <b>5 × as long as you can</b>" },
+        { n: "Kick-ups + bailing", d: "In open space, kick up and practise cartwheeling out safely. <b>10 attempts</b>" },
+        { n: "Freestanding hold", d: "Kick up and balance using your fingers. <b>Build to 30s</b>" }
+      ],
+      tip: "Arms locked, push tall through your shoulders, squeeze your glutes. Balance with your fingertips."
+    },
+    {
+      id: "muscleup", name: "Muscle-Up", level: "a",
+      goal: "One clean muscle-up on a bar.",
+      steps: [
+        { n: "Foundation", d: "Be able to do strict pull-ups and dips comfortably. <b>10 pull-ups, 15 dips</b>" },
+        { n: "Explosive pull-ups", d: "Pull as high as you can, aiming for chest to bar. <b>3 × 5</b>" },
+        { n: "Straight bar dips", d: "Start on top of the bar and dip down and back up. <b>3 × 8</b>" },
+        { n: "Negatives", d: "Jump to the top position and lower slowly through the transition. <b>3 × 3</b>" },
+        { n: "Full muscle-up", d: "Pull, lean your chest over the bar, press out. <b>1 clean rep</b>" }
+      ],
+      tip: "Pull the bar towards your hips, not your chin, and get your chest over it fast."
+    },
+    {
+      id: "backlever", name: "Back Lever", level: "a",
+      goal: "Hold a full back lever for 10 seconds.",
+      steps: [
+        { n: "Skin the cat", d: "From a hang, tuck and rotate through until you're hanging backwards, then return. <b>3 × 5</b>" },
+        { n: "German hang", d: "Hold the bottom of skin the cat gently. Go easy on the shoulders. <b>3 × 15s</b>" },
+        { n: "Tuck back lever", d: "Body face down and level, knees tucked. <b>3 × 10–15s</b>" },
+        { n: "Straddle back lever", d: "Legs straight and wide apart. <b>3 × 5–10s</b>" },
+        { n: "Full back lever", d: "Legs together, body straight and level. <b>Build to 10s</b>" }
+      ],
+      tip: "Progress slowly. This puts a lot of stress on your elbows and biceps."
+    },
+    {
+      id: "frontlever", name: "Front Lever", level: "a",
+      goal: "Hold a full front lever for 10 seconds.",
+      steps: [
+        { n: "Scap pulls", d: "Hanging with straight arms, pull your shoulders down and back. <b>3 × 10</b>" },
+        { n: "Tuck front lever", d: "Face up, back level, knees tucked to chest, arms straight. <b>3 × 15s</b>" },
+        { n: "Advanced tuck", d: "Same, but with your back flat and hips opened up. <b>3 × 10s</b>" },
+        { n: "Straddle front lever", d: "Legs straight and wide apart. <b>3 × 5–10s</b>" },
+        { n: "Full front lever", d: "Legs together, body straight and level. <b>Build to 10s</b>" }
+      ],
+      tip: "Keep your arms locked and think about pulling the bar down to your hips."
+    },
+    {
+      id: "planche", name: "Tuck Planche", level: "a",
+      goal: "Hold a tuck planche for 15 seconds.",
+      steps: [
+        { n: "Planche lean", d: "Push-up position, lean your shoulders well past your hands. <b>3 × 20s</b>" },
+        { n: "Frog stand", d: "Knees resting on your elbows, feet off the floor. <b>3 × 30s</b>" },
+        { n: "Tuck planche attempts", d: "On parallettes, knees off your arms, back rounded. <b>5 × 3–5s</b>" },
+        { n: "Build the hold", d: "Add a second or two each week. <b>Up to 15s</b>" }
+      ],
+      tip: "Lock your arms straight and round your upper back. Warm your wrists up well first."
+    },
+    {
+      id: "flag", name: "Human Flag", level: "a",
+      goal: "Hold a full human flag for 5 seconds.",
+      steps: [
+        { n: "Side plank", d: "Body in a straight line, hips high. <b>3 × 45s each side</b>" },
+        { n: "Vertical flag", d: "On a pole, top arm pulls, bottom arm pushes, legs straight up. <b>3 × 5s</b>" },
+        { n: "Tuck flag", d: "Lower to the side with knees tucked. <b>3 × 5s</b>" },
+        { n: "Straddle flag", d: "Legs straight and wide apart. <b>3 × 3–5s</b>" },
+        { n: "Full flag", d: "Legs together, body level. <b>Build to 5s</b>" }
+      ],
+      tip: "Use a solid vertical pole. Bottom arm locked and pushing, top arm pulling."
+    }
+  ];
+  const LEVEL_NAME = { b: "BEGINNER", i: "INTERMEDIATE", a: "ADVANCED" };
+
+  /* ================= storage ================= */
+  const KEY = "gymSystem";
+  let state = { days: [], name: "DAN", lastQuest: "", steps: {}, mastered: [],
+                urgent: null, urgentLast: 0, urgentDay: "", urgentCount: 0, bonus: 0 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY));
+    if (saved) state = Object.assign(state, saved);
+    else {
+      const old = JSON.parse(localStorage.getItem("gymDays"));
+      if (Array.isArray(old)) state.days = old;
+    }
+  } catch (e) {}
+  if (!state.steps) state.steps = {};
+  if (!Array.isArray(state.mastered)) state.mastered = [];
+  let done = new Set(state.days);
+  function save() {
+    state.days = [...done];
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  /* ================= dates ================= */
+  const pad = n => String(n).padStart(2, "0");
+  const keyOf = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const fromKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  const dayDiff = (a, b) => Math.round((b - a) / 86400000);
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const weekStart = d => addDays(d, -((d.getDay() + 6) % 7));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const todayKey = keyOf(today);
+  let view = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  function countWeek(start) {
+    let n = 0;
+    for (let i = 0; i < 7; i++) if (done.has(keyOf(addDays(start, i)))) n++;
+    return n;
+  }
+
+  /* ================= level maths ================= */
+  function weekSummary() {
+    const days = [...done].map(fromKey).filter(d => d <= today);
+    if (!days.length) return { cleared: 0, failed: 0 };
+    const first = weekStart(new Date(Math.min(...days)));
+    const cur = weekStart(today);
+    let cleared = 0, failed = 0;
+    for (let ws = new Date(first); ws <= cur; ws = addDays(ws, 7)) {
+      if (countWeek(ws) >= WEEK_GOAL) cleared++;
+      else if (ws < cur) failed++;
+    }
+    return { cleared, failed };
+  }
+
+  function player() {
+    const sessions = [...done].filter(k => fromKey(k) <= today).length;
+    const { cleared, failed } = weekSummary();
+    const xp = Math.max(0, sessions * XP.session + cleared * XP.week
+      + state.mastered.length * XP.skill + (state.bonus || 0) - failed * XP.penalty);
+    let level = 1, rest = xp, need = levelNeed(1);
+    while (rest >= need) { rest -= need; level++; need = levelNeed(level); }
+    return { level, rest, need };
+  }
+
+  function calcStreak() {
+    const days = [...done].map(fromKey).filter(d => d <= today).sort((a, b) => a - b);
+    if (!days.length) return { streak: 0, restUsed: null };
+    const last = days[days.length - 1];
+    const restUsed = Math.max(0, dayDiff(last, today) - 1);
+    if (restUsed > MAX_REST) return { streak: 0, restUsed };
+    let streak = 1;
+    for (let i = days.length - 1; i > 0; i--) {
+      if (dayDiff(days[i - 1], days[i]) - 1 <= MAX_REST) streak++; else break;
+    }
+    return { streak, restUsed, trainedToday: dayDiff(last, today) === 0 };
+  }
+
+  /* ================= rendering: quests ================= */
+  const $ = id => document.getElementById(id);
+  const RING_C = 2 * Math.PI * 42;
+
+  function renderStatus() {
+    const p = player();
+    $("level").textContent = p.level;
+    $("playerName").innerHTML = state.name + "<small>PLAYER</small>";
+    $("xpFill").style.width = (p.rest / p.need * 100) + "%";
+    $("xpText").textContent = p.rest + " / " + p.need;
+  }
+
+  function renderQuests() {
+    const s = calcStreak();
+    $("streak").textContent = s.streak;
+    $("streak").classList.toggle("off", s.streak === 0);
+    $("streakUnit").textContent = s.streak === 1 ? "session" : "sessions";
+    const info = $("restInfo"); info.className = "msg";
+    if (s.restUsed === null) info.textContent = "Tap a day to begin";
+    else if (s.streak === 0) { info.textContent = "Streak broken"; info.classList.add("bad"); }
+    else if (s.trainedToday) { info.textContent = "Cleared today"; info.classList.add("good"); }
+    else {
+      const left = MAX_REST - s.restUsed;
+      if (left === 0) { info.textContent = "Train today or lose it!"; info.classList.add("warn"); }
+      else info.textContent = left + " rest day" + (left === 1 ? "" : "s") + " left";
+    }
+
+    const w = countWeek(weekStart(today));
+    $("weekCount").textContent = w;
+    $("ring").style.strokeDasharray = RING_C;
+    $("ring").style.strokeDashoffset = RING_C * (1 - Math.min(1, w / WEEK_GOAL));
+    const wi = $("weekInfo"); wi.className = "msg";
+    const needed = WEEK_GOAL - w;
+    const daysLeft = 7 - ((today.getDay() + 6) % 7);
+    if (needed <= 0) { wi.textContent = "Quest cleared"; wi.classList.add("good"); }
+    else if (needed > daysLeft) { wi.textContent = "Failed: penalty incoming"; wi.classList.add("bad"); }
+    else if (needed === daysLeft) { wi.textContent = "No days to spare"; wi.classList.add("warn"); }
+    else wi.textContent = needed + " more to clear";
+  }
+
+  function renderCalendar() {
+    $("monthName").textContent = view.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    const weeksEl = $("weeks"); weeksEl.innerHTML = "";
+    const month = view.getMonth();
+    const lastOfMonth = new Date(view.getFullYear(), month + 1, 0);
+    let start = weekStart(view), monthTotal = 0, weeksHit = 0;
+    while (start <= lastOfMonth) {
+      const row = document.createElement("div");
+      row.className = "week";
+      if (countWeek(start) >= WEEK_GOAL) { row.classList.add("hit"); weeksHit++; }
+      for (let i = 0; i < 7; i++) {
+        const date = addDays(start, i);
+        if (date.getMonth() !== month) { const e = document.createElement("div"); e.className = "empty"; row.appendChild(e); continue; }
+        const k = keyOf(date);
+        const b = document.createElement("button");
+        b.className = "day"; b.textContent = date.getDate();
+        if (done.has(k)) { b.classList.add("done"); monthTotal++; }
+        if (k === todayKey) b.classList.add("today");
+        if (date > today) b.classList.add("future");
+        b.onclick = () => tapDay(date);
+        row.appendChild(b);
+      }
+      weeksEl.appendChild(row);
+      start = addDays(start, 7);
+    }
+    $("monthTotal").textContent = monthTotal;
+    $("weeksHit").textContent = weeksHit;
+  }
+
+  /* ================= rendering: skills ================= */
+  let openSkill = null;
+
+  const stepsDone = id => (state.steps[id] || []).length;
+
+  function renderSkillList() {
+    $("skillCount").textContent = state.mastered.length + " / " + SKILLS.length + " mastered";
+    const list = $("skillList"); list.innerHTML = "";
+    SKILLS.forEach(sk => {
+      const m = state.mastered.includes(sk.id);
+      const pct = m ? 100 : stepsDone(sk.id) / sk.steps.length * 100;
+      const b = document.createElement("button");
+      b.className = "skill-row" + (m ? " mastered" : "");
+      b.innerHTML =
+        '<div class="info"><div class="nm">' + sk.name +
+        '<span class="tag ' + sk.level + '">' + LEVEL_NAME[sk.level] + '</span></div>' +
+        '<div class="meta">' + (m ? "Mastered" : stepsDone(sk.id) + " / " + sk.steps.length + " steps") + '</div>' +
+        '<div class="bar"><div style="width:' + pct + '%"></div></div></div>' +
+        '<div class="badge">✓</div>';
+      b.onclick = () => showSkill(sk.id);
+      list.appendChild(b);
+    });
+  }
+
+  function renderSkillDetail() {
+    const sk = SKILLS.find(s => s.id === openSkill);
+    if (!sk) return;
+    const m = state.mastered.includes(sk.id);
+    const doneSteps = state.steps[sk.id] || [];
+    const el = $("skillDetail"); el.innerHTML = "";
+
+    el.insertAdjacentHTML("beforeend",
+      '<div class="ptitle">SKILL</div>' +
+      '<h2 class="d-title">' + sk.name.toUpperCase() + '</h2>' +
+      '<div class="d-sub"><span class="tag ' + sk.level + '" style="margin:0">' + LEVEL_NAME[sk.level] + '</span></div>' +
+      '<div class="label">GOAL</div><div class="text">' + sk.goal + '</div>' +
+      '<div class="label">HOW TO PRACTISE</div>');
+
+    sk.steps.forEach((st, i) => {
+      const b = document.createElement("button");
+      b.className = "step" + (doneSteps.includes(i) ? " done" : "");
+      b.innerHTML = '<span class="box">✓</span><span><div class="sn">' + (i + 1) + ". " + st.n +
+        '</div><div class="sd">' + st.d + '</div></span>';
+      b.onclick = () => toggleStep(sk.id, i);
+      el.appendChild(b);
+    });
+
+    el.insertAdjacentHTML("beforeend", '<div class="label">TIP</div><div class="text">' + sk.tip + '</div>');
+
+    const mb = document.createElement("button");
+    mb.className = "btn master-btn " + (m ? "done" : "primary");
+    mb.textContent = m ? "✓ MASTERED" : "MARK AS MASTERED";
+    mb.onclick = () => toggleMastered(sk);
+    el.appendChild(mb);
+
+    el.insertAdjacentHTML("beforeend",
+      '<div class="safety">Warm up wrists and shoulders first. Stop if you feel sharp pain.</div>');
+  }
+
+  function renderProfile() {
+    const days = [...done].map(fromKey).filter(d => d <= today).sort((a, b) => a - b);
+    let best = 0, run = 0;
+    days.forEach((d, i) => {
+      run = (i > 0 && dayDiff(days[i - 1], d) - 1 <= MAX_REST) ? run + 1 : 1;
+      if (run > best) best = run;
+    });
+    $("recSessions").textContent = days.length;
+    $("recBest").textContent = best;
+    $("recWeeks").textContent = weekSummary().cleared;
+    $("recSkills").textContent = state.mastered.length + "/" + SKILLS.length;
+  }
+
+  function render() {
+    renderStatus(); renderQuests(); renderCalendar();
+    renderSkillList(); renderSkillDetail(); renderProfile(); renderUrgent();
+  }
+
+  /* ================= urgent quests ================= */
+  const URGENT_POOL = [
+    { t: "50 PUSH-UPS", xp: 30 },
+    { t: "100 SQUATS", xp: 30 },
+    { t: "3 MIN PLANK", xp: 25, note: "Split it into sets if you need to." },
+    { t: "30 BURPEES", xp: 40 },
+    { t: "20 PULL-UPS", xp: 40 },
+    { t: "50 SIT-UPS", xp: 20 },
+    { t: "60 LUNGES", xp: 25, note: "30 on each leg." },
+    { t: "40 DIPS", xp: 30 },
+    { t: "2 MIN WALL SIT", xp: 20 },
+    { t: "100 JUMPING JACKS", xp: 20 }
+  ];
+  const URGENT_MAX_PER_DAY = 2;
+  const URGENT_GAP_MS = 30 * 60 * 1000; // at least 30 min between urgent quests
+
+  const nowKey = () => keyOf(new Date());
+
+  function timeLeftText() {
+    const n = new Date(), mid = new Date(n); mid.setHours(24, 0, 0, 0);
+    const mins = Math.max(0, Math.floor((mid - n) / 60000));
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return "⏱ " + (h ? h + "h " : "") + m + "m left";
+  }
+
+  function renderUrgent() {
+    const u = state.urgent;
+    $("urgentCard").classList.toggle("hidden", !u);
+    if (!u) return;
+    $("uTask").textContent = u.t;
+    $("uTime").textContent = timeLeftText();
+    $("uXp").textContent = "+" + u.xp + " EXP";
+  }
+
+  function checkUrgentExpired() {
+    if (state.urgent && state.urgent.day !== nowKey()) {
+      const t = state.urgent.t;
+      state.urgent = null; save(); render();
+      sysWindow({ kicker: "URGENT QUEST", tone: "red", title: "QUEST EXPIRED", body: t + " was not completed in time." });
+    }
+  }
+
+  function maybeUrgent(chance) {
+    checkUrgentExpired();
+    if (open || state.urgent) return;
+    const day = nowKey();
+    if (state.urgentDay !== day) { state.urgentDay = day; state.urgentCount = 0; }
+    if (state.urgentCount >= URGENT_MAX_PER_DAY) return;
+    if (Date.now() - (state.urgentLast || 0) < URGENT_GAP_MS) return;
+    if (Math.random() > chance) return;
+
+    offerUrgent(URGENT_POOL[Math.floor(Math.random() * URGENT_POOL.length)]);
+  }
+
+  // shows the urgent quest pop-up (used by in-app quests and by tapped notifications)
+  function offerUrgent(q) {
+    checkUrgentExpired();
+    if (state.urgent) {
+      sysWindow({ kicker: "URGENT QUEST", tone: "red", title: "QUEST IN PROGRESS",
+        body: "Finish " + state.urgent.t + " first." });
+      return;
+    }
+    const day = nowKey();
+    if (state.urgentDay !== day) { state.urgentDay = day; state.urgentCount = 0; }
+    state.urgentLast = Date.now(); state.urgentCount++; save();
+    sysWindow({
+      kicker: "URGENT QUEST", tone: "red", title: q.t,
+      body: (q.note ? q.note.replace(/[<>&"]/g, "") + "<br>" : "") + "Time limit: until midnight.<br><span class='hl'>Reward: +" + q.xp + " EXP</span>",
+      buttons: [
+        { label: "DECLINE", ghost: true },
+        { label: "ACCEPT", primary: true, action: () => {
+          state.urgent = { t: q.t, xp: q.xp, day: nowKey() };
+          save(); render();
+        } }
+      ]
+    });
+  }
+
+  function completeUrgent() {
+    const u = state.urgent; if (!u) return;
+    sysWindow({ kicker: "URGENT QUEST", title: u.t, body: "Have you completed it?",
+      buttons: [{ label: "NOT YET", ghost: true }, { label: "YES", primary: true, action: () => {
+        const before = player().level;
+        state.bonus = (state.bonus || 0) + u.xp;
+        state.urgent = null; save(); render();
+        sysWindow({ kicker: "QUEST COMPLETE", title: u.t, body: "<span class='hl'>Reward: +" + u.xp + " EXP</span>" });
+        levelCheck(before);
+      } }] });
+  }
+
+  function giveUpUrgent() {
+    if (!state.urgent) return;
+    sysWindow({ kicker: "URGENT QUEST", tone: "red", title: "ABANDON QUEST?", body: "You won't get the reward.",
+      buttons: [{ label: "KEEP GOING", primary: true }, { label: "GIVE UP", ghost: true, action: () => {
+        state.urgent = null; save(); render();
+      } }] });
+  }
+
+  /* ================= navigation ================= */
+  const TABS = ["quests", "skills", "profile"];
+  const TAB_EL = { quests: "tabQuests", skills: "tabSkills", profile: "tabProfile" };
+  let currentTab = "quests";
+  function setTab(t) {
+    currentTab = t;
+    TABS.forEach(name => $(TAB_EL[name]).classList.toggle("hidden", name !== t));
+    document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
+    window.scrollTo(0, 0);
+  }
+
+  // swipe left = next tab, swipe right = previous tab
+  let sx = 0, sy = 0, tracking = false;
+  document.addEventListener("touchstart", e => {
+    if (open || e.touches.length !== 1) { tracking = false; return; }
+    tracking = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const i = TABS.indexOf(currentTab);
+    const next = dx < 0 ? i + 1 : i - 1;
+    if (next >= 0 && next < TABS.length) {
+      if (TABS[next] === "skills") showSkillList();
+      setTab(TABS[next]);
+    }
+  }, { passive: true });
+  function showSkill(id) {
+    openSkill = id;
+    renderSkillDetail();
+    $("skillListView").classList.add("hidden");
+    $("skillDetailView").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+  function showSkillList() {
+    openSkill = null;
+    $("skillDetailView").classList.add("hidden");
+    $("skillListView").classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+
+  /* ================= System pop-ups ================= */
+  const queue = []; let open = false;
+  function sysWindow(o) { queue.push(o); if (!open) nextWindow(); }
+  function nextWindow() {
+    const o = queue.shift();
+    if (!o) { open = false; $("overlay").classList.remove("show"); return; }
+    open = true;
+    $("sys").className = "panel sys" + (o.tone ? " " + o.tone : "");
+    $("sysKicker").textContent = o.kicker || "NOTIFICATION";
+    $("sysTitle").textContent = o.title || "";
+    $("sysBody").innerHTML = o.body || "";
+    $("sysExtra").innerHTML = "";
+    let input = null;
+    if (o.input) {
+      input = document.createElement("input");
+      input.type = "text"; input.value = o.input.value || "";
+      $("sysExtra").appendChild(input);
+    }
+    const btns = $("sysBtns"); btns.innerHTML = "";
+    (o.buttons || [{ label: "OK", primary: true }]).forEach(bt => {
+      const b = document.createElement("button");
+      b.className = "btn" + (bt.primary ? " primary" : "") + (bt.ghost ? " ghost" : "");
+      b.textContent = bt.label;
+      b.onclick = () => { const v = input ? input.value : null; if (bt.action) bt.action(v); nextWindow(); };
+      btns.appendChild(b);
+    });
+    $("overlay").classList.add("show");
+  }
+
+  function levelCheck(before) {
+    const after = player().level;
+    if (after > before) sysWindow({ kicker: "LEVEL UP", tone: "gold", title: "LEVEL " + after, body: "You have leveled up." });
+  }
+
+  /* ================= actions ================= */
+  function tapDay(date) {
+    if (date > today) return;
+    const k = keyOf(date);
+    const ws = weekStart(date);
+    const beforeWeek = countWeek(ws);
+    const beforeLevel = player().level;
+    if (done.has(k)) done.delete(k); else done.add(k);
+    save(); render();
+    if (beforeWeek < WEEK_GOAL && countWeek(ws) >= WEEK_GOAL) {
+      sysWindow({ kicker: "QUEST COMPLETE", title: "WEEKLY QUEST CLEARED",
+        body: "Train " + WEEK_GOAL + " times this week.<br><span class='hl'>Reward: +" + XP.week + " EXP</span>" });
+    }
+    levelCheck(beforeLevel);
+  }
+
+  function toggleStep(id, i) {
+    const arr = state.steps[id] || [];
+    state.steps[id] = arr.includes(i) ? arr.filter(x => x !== i) : [...arr, i];
+    save(); render();
+  }
+
+  function toggleMastered(sk) {
+    if (state.mastered.includes(sk.id)) {
+      sysWindow({ kicker: "SKILL", title: sk.name.toUpperCase(), body: "Remove mastered status?",
+        buttons: [{ label: "KEEP", primary: true }, { label: "REMOVE", ghost: true, action: () => {
+          state.mastered = state.mastered.filter(s => s !== sk.id); save(); render();
+        } }] });
+      return;
+    }
+    sysWindow({ kicker: "SKILL", title: sk.name.toUpperCase(),
+      body: "Goal: " + sk.goal + "<br>Have you done it with clean form?",
+      buttons: [{ label: "NOT YET", ghost: true }, { label: "YES", primary: true, action: () => {
+        const before = player().level;
+        state.mastered.push(sk.id);
+        state.steps[sk.id] = sk.steps.map((_, i) => i);
+        save(); render();
+        sysWindow({ kicker: "SKILL ACQUIRED", tone: "gold", title: sk.name.toUpperCase(),
+          body: "You have mastered a new skill.<br><span class='hl'>Reward: +" + XP.skill + " EXP</span>" });
+        levelCheck(before);
+      } }] });
+  }
+
+  $("playerName").onclick = () => sysWindow({
+    kicker: "PLAYER", title: "CHANGE NAME", input: { value: state.name },
+    buttons: [{ label: "CANCEL", ghost: true }, { label: "SAVE", primary: true, action: v => {
+      if (v && v.trim()) { state.name = v.trim().toUpperCase().slice(0, 14); save(); render(); }
+    } }]
+  });
+
+  /* ================= start ================= */
+  $("dows").innerHTML = ["M", "T", "W", "T", "F", "S", "S"].map(d => '<div class="dow">' + d + "</div>").join("");
+  $("prev").onclick = () => { view.setMonth(view.getMonth() - 1); render(); };
+  $("next").onclick = () => { view.setMonth(view.getMonth() + 1); render(); };
+  document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+    if (b.dataset.tab === "skills") showSkillList();
+    setTab(b.dataset.tab);
+  });
+  $("backBtn").onclick = showSkillList;
+  render();
+
+  if (state.lastQuest !== todayKey && !done.has(todayKey)) {
+    state.lastQuest = todayKey; save();
+    const s = calcStreak();
+    const atRisk = s.restUsed !== null && s.streak > 0 && s.restUsed >= MAX_REST;
+    sysWindow({
+      kicker: "DAILY QUEST", title: "TRAINING DAY", tone: atRisk ? "red" : "",
+      body: "Complete one training session today.<br><span class='hl'>Reward: +" + XP.session + " EXP</span><br>" +
+        "Weekly quest: " + countWeek(weekStart(today)) + " / " + WEEK_GOAL +
+        (atRisk ? "<br><span class='red'>Failure to comply will break your streak.</span>" : ""),
+      buttons: [{ label: "ACCEPT", primary: true }]
+    });
+  }
+
+  /* ================= notifications ================= */
+  const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const unb64u = s => {
+    const p = s.replace(/-/g, "+").replace(/_/g, "/");
+    return Uint8Array.from(atob(p + "=".repeat((4 - p.length % 4) % 4)), c => c.charCodeAt(0));
+  };
+  const secure = location.protocol === "https:" || location.hostname === "localhost";
+
+  function notifProblem() {
+    if (!secure || !("serviceWorker" in navigator))
+      return "Notifications work once the app is online and added to your Home Screen.";
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+    if (ios && !standalone)
+      return "Add the app to your Home Screen first (Share → Add to Home Screen), then open it from there.";
+    if (!("PushManager" in window) || !("Notification" in window))
+      return "This browser can't get notifications. iPhone needs iOS 16.4 or newer.";
+    return null;
+  }
+
+  function renderNotif() {
+    const problem = notifProblem();
+    let code = null; try { code = localStorage.getItem("gymPushCode"); } catch (e) {}
+    const st = $("notifStatus"); st.className = "notif-text";
+    $("notifBtn").classList.toggle("hidden", !!problem);
+    if (problem) { st.textContent = problem; $("notifCodeWrap").classList.add("hidden"); return; }
+    if (code && Notification.permission === "granted") {
+      st.textContent = "Notifications are on."; st.classList.add("good");
+      $("notifBtn").textContent = "REFRESH CODE";
+      $("notifCode").value = code;
+      $("notifCodeWrap").classList.remove("hidden");
+    } else {
+      st.textContent = Notification.permission === "denied"
+        ? "Notifications are blocked. Turn them on in iPhone Settings → Notifications → System."
+        : "Get urgent quests on your phone, even when the app is closed.";
+      $("notifBtn").textContent = "TURN ON NOTIFICATIONS";
+      $("notifCodeWrap").classList.add("hidden");
+    }
+  }
+
+  async function getVapid() {
+    let v = null; try { v = JSON.parse(localStorage.getItem("gymVapid")); } catch (e) {}
+    if (v && v.publicKey && v.privateKey) return v;
+    const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    const pub = b64u(await crypto.subtle.exportKey("raw", kp.publicKey));
+    const jwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+    v = { publicKey: pub, privateKey: jwk.d };
+    try { localStorage.setItem("gymVapid", JSON.stringify(v)); } catch (e) {}
+    return v;
+  }
+
+  async function enableNotifs() {
+    try {
+      const perm = await Notification.requestPermission(); // must come first, straight from the tap
+      if (perm !== "granted") { renderNotif(); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const v = await getVapid();
+      let sub = await reg.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: unb64u(v.publicKey) });
+      const code = btoa(JSON.stringify({ subscription: sub.toJSON(), publicKey: v.publicKey, privateKey: v.privateKey }));
+      try { localStorage.setItem("gymPushCode", code); } catch (e) {}
+      renderNotif();
+      sysWindow({ kicker: "SYSTEM", title: "NOTIFICATIONS ON",
+        body: "Now copy your push code and add it to GitHub as <span class='hl'>PUSH_CONFIG</span>." });
+    } catch (err) {
+      sysWindow({ kicker: "SYSTEM", tone: "red", title: "SOMETHING WENT WRONG", body: String(err && err.message || err) });
+    }
+  }
+
+  $("notifBtn").onclick = enableNotifs;
+  $("copyBtn").onclick = async () => {
+    const t = $("notifCode");
+    try { await navigator.clipboard.writeText(t.value); }
+    catch (e) { t.focus(); t.select(); document.execCommand("copy"); }
+    $("copyBtn").textContent = "COPIED ✓";
+    setTimeout(() => $("copyBtn").textContent = "COPY CODE", 1500);
+  };
+  renderNotif();
+
+  if (secure && "serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.addEventListener("message", e => {
+      if (e.data && e.data.type === "urgent" && e.data.quest) offerUrgent(cleanQuest(e.data.quest));
+    });
+  }
+
+  function cleanQuest(q) {
+    return { t: String(q.t || "50 PUSH-UPS").slice(0, 40).toUpperCase(),
+             xp: Math.min(60, Math.max(10, parseInt(q.xp, 10) || 30)),
+             note: q.note ? String(q.note).slice(0, 80) : "" };
+  }
+
+  // opened by tapping a notification: ?uq=50%20PUSH-UPS&xp=30
+  const params = new URLSearchParams(location.search);
+  if (params.get("uq")) {
+    const q = cleanQuest({ t: params.get("uq"), xp: params.get("xp"), note: params.get("note") });
+    history.replaceState(null, "", location.pathname);
+    offerUrgent(q);
+  }
+
+  /* urgent quests: a chance shortly after opening, then random checks every minute */
+  $("uDone").onclick = completeUrgent;
+  $("uGiveUp").onclick = giveUpUrgent;
+  setTimeout(() => maybeUrgent(0.5), 8000);
+  setInterval(() => { maybeUrgent(0.2); renderUrgent(); }, 60000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") setTimeout(() => maybeUrgent(0.5), 3000);
+  });
+</script>
+</body>
+</html>
