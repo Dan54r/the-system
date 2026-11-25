@@ -183,6 +183,17 @@
   .u-meta .xp { color: var(--blue); }
   .u-btns { display: flex; gap: 8px; }
   .u-btns .btn { flex: 1; padding: 12px; font-size: 12px; letter-spacing: 2px; }
+  .urgent-card .note { color: #ff8a95; }
+  .urgent-card .btn.primary { background: linear-gradient(160deg, #ff6b78, #d92b3c); color: #fff; border-color: #ff9aa3; }
+  .urgent-card .btn.ghost { color: #ff8a95; border-color: rgba(255,75,92,0.45); background: rgba(255,75,92,0.08); }
+  .urgent-card .u-meta .xp { color: #ff8a95; }
+
+  /* ---------- tab slide ---------- */
+  .wrap { overflow-x: clip; }
+  .slide-left { animation: slideL 0.22s ease-out; }
+  .slide-right { animation: slideR 0.22s ease-out; }
+  @keyframes slideL { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes slideR { from { transform: translateX(-48px); opacity: 0; } to { transform: none; opacity: 1; } }
 
   /* ---------- profile ---------- */
   .records { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -304,6 +315,19 @@
         <div class="note" id="skillCount"></div>
         <div id="skillList"></div>
       </div>
+
+      <div class="panel urgent-card" id="urgentCard2">
+        <div class="ptitle">URGENT QUEST</div>
+        <div id="u2Empty" class="note">No urgent quest right now. They show up at random.</div>
+        <div id="u2Active" class="hidden">
+          <div class="u-task" id="u2Task"></div>
+          <div class="u-meta"><span id="u2Time"></span><span class="xp" id="u2Xp"></span></div>
+          <div class="u-btns">
+            <button class="btn ghost" id="u2GiveUp">GIVE UP</button>
+            <button class="btn primary" id="u2Done">COMPLETE</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="skillDetailView" class="hidden">
       <button class="btn back" id="backBtn">‹ SKILLS</button>
@@ -339,7 +363,7 @@
         <div><span>Training session</span><b>+40</b></div>
         <div><span>Weekly quest cleared</span><b>+60</b></div>
         <div><span>Skill mastered</span><b>+150</b></div>
-        <div><span>Urgent quest</span><b>+20 to +40</b></div>
+        <div><span>Urgent quest</span><b>+20 to +30</b></div>
         <div class="pen"><span>Missed weekly quest</span><b>−80</b></div>
       </div>
     </div>
@@ -493,7 +517,7 @@
   /* ================= storage ================= */
   const KEY = "gymSystem";
   let state = { days: [], name: "DAN", lastQuest: "", steps: {}, mastered: [],
-                urgent: null, urgentLast: 0, urgentDay: "", urgentCount: 0, bonus: 0 };
+                urgent: null, urgentOffer: null, urgentLast: 0, urgentDay: "", urgentCount: 0, bonus: 0 };
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved) state = Object.assign(state, saved);
@@ -712,18 +736,18 @@
 
   /* ================= urgent quests ================= */
   const URGENT_POOL = [
-    { t: "50 PUSH-UPS", xp: 30 },
-    { t: "100 SQUATS", xp: 30 },
-    { t: "3 MIN PLANK", xp: 25, note: "Split it into sets if you need to." },
-    { t: "30 BURPEES", xp: 40 },
-    { t: "20 PULL-UPS", xp: 40 },
-    { t: "50 SIT-UPS", xp: 20 },
-    { t: "60 LUNGES", xp: 25, note: "30 on each leg." },
-    { t: "40 DIPS", xp: 30 },
-    { t: "2 MIN WALL SIT", xp: 20 },
-    { t: "100 JUMPING JACKS", xp: 20 }
+    { t: "20 PUSH-UPS", xp: 25 },
+    { t: "30 SQUATS", xp: 20 },
+    { t: "1 MIN PLANK", xp: 20 },
+    { t: "10 BURPEES", xp: 30 },
+    { t: "5 PULL-UPS", xp: 30 },
+    { t: "20 SIT-UPS", xp: 20 },
+    { t: "20 LUNGES", xp: 20, note: "10 on each leg." },
+    { t: "10 DIPS", xp: 25 },
+    { t: "45 SEC WALL SIT", xp: 20 },
+    { t: "40 JUMPING JACKS", xp: 20 }
   ];
-  const URGENT_MAX_PER_DAY = 2;
+  const URGENT_MAX_PER_DAY = 1;
   const URGENT_GAP_MS = 30 * 60 * 1000; // at least 30 min between urgent quests
 
   const nowKey = () => keyOf(new Date());
@@ -735,17 +759,25 @@
     return "⏱ " + (h ? h + "h " : "") + m + "m left";
   }
 
+  // The card shows either an offered quest (waiting for ACCEPT) or an accepted one (waiting for COMPLETE).
   function renderUrgent() {
-    const u = state.urgent;
+    const u = state.urgent || state.urgentOffer;
+    const offered = !state.urgent && !!state.urgentOffer;
     $("urgentCard").classList.toggle("hidden", !u);
+    $("u2Empty").classList.toggle("hidden", !!u);
+    $("u2Active").classList.toggle("hidden", !u);
     if (!u) return;
-    $("uTask").textContent = u.t;
-    $("uTime").textContent = timeLeftText();
-    $("uXp").textContent = "+" + u.xp + " EXP";
+    $("uTask").textContent = $("u2Task").textContent = u.t;
+    $("uTime").textContent = $("u2Time").textContent = offered ? "NEW · " + timeLeftText() : timeLeftText();
+    $("uXp").textContent = $("u2Xp").textContent = "+" + u.xp + " EXP";
+    $("uGiveUp").textContent = $("u2GiveUp").textContent = offered ? "DECLINE" : "GIVE UP";
+    $("uDone").textContent = $("u2Done").textContent = offered ? "ACCEPT" : "COMPLETE";
   }
 
   function checkUrgentExpired() {
-    if (state.urgent && state.urgent.day !== nowKey()) {
+    const today = nowKey();
+    if (state.urgentOffer && state.urgentOffer.day !== today) { state.urgentOffer = null; save(); render(); }
+    if (state.urgent && state.urgent.day !== today) {
       const t = state.urgent.t;
       state.urgent = null; save(); render();
       sysWindow({ kicker: "URGENT QUEST", tone: "red", title: "QUEST EXPIRED", body: t + " was not completed in time." });
@@ -754,7 +786,9 @@
 
   function maybeUrgent(chance) {
     checkUrgentExpired();
-    if (open || state.urgent) return;
+    if (open || state.urgent || state.urgentOffer) return;
+    // with notifications on, the daily quest comes from the server instead
+    try { if (localStorage.getItem("gymPushCode") && Notification.permission === "granted") return; } catch (e) {}
     const day = nowKey();
     if (state.urgentDay !== day) { state.urgentDay = day; state.urgentCount = 0; }
     if (state.urgentCount >= URGENT_MAX_PER_DAY) return;
@@ -764,7 +798,7 @@
     offerUrgent(URGENT_POOL[Math.floor(Math.random() * URGENT_POOL.length)]);
   }
 
-  // shows the urgent quest pop-up (used by in-app quests and by tapped notifications)
+  // A new quest is saved straight away so it stays on the card even if the pop-up is missed.
   function offerUrgent(q) {
     checkUrgentExpired();
     if (state.urgent) {
@@ -774,18 +808,31 @@
     }
     const day = nowKey();
     if (state.urgentDay !== day) { state.urgentDay = day; state.urgentCount = 0; }
-    state.urgentLast = Date.now(); state.urgentCount++; save();
+    state.urgentLast = Date.now(); state.urgentCount++;
+    state.urgentOffer = { t: q.t, xp: q.xp, note: q.note || "", day };
+    save(); render();
     sysWindow({
       kicker: "URGENT QUEST", tone: "red", title: q.t,
       body: (q.note ? q.note.replace(/[<>&"]/g, "") + "<br>" : "") + "Time limit: until midnight.<br><span class='hl'>Reward: +" + q.xp + " EXP</span>",
       buttons: [
-        { label: "DECLINE", ghost: true },
-        { label: "ACCEPT", primary: true, action: () => {
-          state.urgent = { t: q.t, xp: q.xp, day: nowKey() };
-          save(); render();
-        } }
+        { label: "LATER", ghost: true },
+        { label: "ACCEPT", primary: true, action: acceptOffer }
       ]
     });
+  }
+
+  function acceptOffer() {
+    const o = state.urgentOffer; if (!o) return;
+    state.urgent = { t: o.t, xp: o.xp, day: nowKey() };
+    state.urgentOffer = null; save(); render();
+  }
+
+  function declineOffer() {
+    if (!state.urgentOffer) return;
+    sysWindow({ kicker: "URGENT QUEST", tone: "red", title: "DECLINE QUEST?", body: "You won't get the reward.",
+      buttons: [{ label: "KEEP IT", primary: true }, { label: "DECLINE", ghost: true, action: () => {
+        state.urgentOffer = null; save(); render();
+      } }] });
   }
 
   function completeUrgent() {
@@ -808,13 +855,23 @@
       } }] });
   }
 
+  const urgentMain = () => state.urgent ? completeUrgent() : acceptOffer();
+  const urgentSide = () => state.urgent ? giveUpUrgent() : declineOffer();
+
   /* ================= navigation ================= */
   const TABS = ["quests", "skills", "profile"];
   const TAB_EL = { quests: "tabQuests", skills: "tabSkills", profile: "tabProfile" };
   let currentTab = "quests";
   function setTab(t) {
+    const dir = TABS.indexOf(t) - TABS.indexOf(currentTab);
     currentTab = t;
     TABS.forEach(name => $(TAB_EL[name]).classList.toggle("hidden", name !== t));
+    if (dir !== 0) {
+      const el = $(TAB_EL[t]);
+      el.classList.remove("slide-left", "slide-right");
+      void el.offsetWidth; // restart the animation
+      el.classList.add(dir > 0 ? "slide-left" : "slide-right");
+    }
     document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
     window.scrollTo(0, 0);
   }
@@ -1044,9 +1101,29 @@
   if (secure && "serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
     navigator.serviceWorker.addEventListener("message", e => {
-      if (e.data && e.data.type === "urgent" && e.data.quest) offerUrgent(cleanQuest(e.data.quest));
+      if (e.data && e.data.type === "check-urgent") checkPendingUrgent();
     });
   }
+
+  // a quest that arrived by notification is saved by the service worker; pick it up here
+  let checkingPending = false;
+  async function checkPendingUrgent() {
+    if (checkingPending || !("caches" in window)) return;
+    checkingPending = true;
+    try {
+      const cache = await caches.open("system-data");
+      const res = await cache.match("pending-urgent");
+      if (res) {
+        const q = await res.json();
+        await cache.delete("pending-urgent");
+        if (keyOf(new Date(q.at || 0)) === nowKey()) offerUrgent(cleanQuest(q)); // only today's quests count
+      }
+    } catch (e) {}
+    checkingPending = false;
+  }
+  checkPendingUrgent();
+  window.addEventListener("focus", checkPendingUrgent);
+  window.addEventListener("pageshow", checkPendingUrgent);
 
   function cleanQuest(q) {
     return { t: String(q.t || "50 PUSH-UPS").slice(0, 40).toUpperCase(),
@@ -1063,12 +1140,15 @@
   }
 
   /* urgent quests: a chance shortly after opening, then random checks every minute */
-  $("uDone").onclick = completeUrgent;
-  $("uGiveUp").onclick = giveUpUrgent;
+  $("uDone").onclick = $("u2Done").onclick = urgentMain;
+  $("uGiveUp").onclick = $("u2GiveUp").onclick = urgentSide;
   setTimeout(() => maybeUrgent(0.5), 8000);
   setInterval(() => { maybeUrgent(0.2); renderUrgent(); }, 60000);
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") setTimeout(() => maybeUrgent(0.5), 3000);
+    if (document.visibilityState === "visible") {
+      checkPendingUrgent();
+      setTimeout(() => maybeUrgent(0.5), 3000);
+    }
   });
 </script>
 </body>
