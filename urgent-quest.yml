@@ -1,0 +1,29 @@
+name: Urgent Quest
+
+on:
+  schedule:
+    # Checks every hour from about 9am to 9pm (UTC-5). Each day one of these
+    # hours is picked at random, and the quest is sent once, at a random minute.
+    - cron: "17 14-23 * * *"
+    - cron: "17 0-2 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Send an urgent quest right now"
+        type: boolean
+        default: true
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save web-push@3.6.7
+      - run: node send-quest.js
+        env:
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}

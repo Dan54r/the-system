@@ -16,10 +16,25 @@ const QUESTS = [
 ];
 
 const force = process.env.FORCE === "true";
-const chance = Number(process.env.CHANCE || 0.18);
 
-if (!force && Math.random() > chance) {
-  console.log("No urgent quest this time.");
+// One urgent quest a day, at a random time between 9am and 10pm (UTC-5).
+// Each day picks its own hour from the date, and this hourly run only sends if it's that hour.
+const UTC_OFFSET = -5;
+const FIRST_HOUR = 9, HOURS = 13; // 9am ... 9pm start hours
+const local = new Date(Date.now() + UTC_OFFSET * 3600 * 1000);
+const dateKey = local.toISOString().slice(0, 10);
+const localHour = local.getUTCHours();
+
+function hash(s) {
+  let h = 2166136261;
+  for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+  return h >>> 0;
+}
+const chosenHour = FIRST_HOUR + hash("system-" + dateKey) % HOURS;
+
+if (!force && localHour !== chosenHour) {
+  console.log("Not quest time yet. Today's quest is due in the " + chosenHour + ":00 hour.");
   process.exit(0);
 }
 
@@ -42,7 +57,11 @@ webpush.setVapidDetails("https://" + owner.toLowerCase() + ".github.io", cfg.pub
 
 const q = QUESTS[Math.floor(Math.random() * QUESTS.length)];
 
-webpush.sendNotification(cfg.subscription, JSON.stringify({ quest: q }), { TTL: 3 * 3600, urgency: "high" })
+// wait a random 0–40 minutes so it never lands at the same minute
+const delayMs = force ? 0 : Math.floor(Math.random() * 40 * 60 * 1000);
+if (delayMs) console.log("Waiting " + Math.round(delayMs / 60000) + " minutes before sending...");
+
+new Promise(r => setTimeout(r, delayMs)).then(() => webpush.sendNotification(cfg.subscription, JSON.stringify({ quest: q }), { TTL: 3 * 3600, urgency: "high" })
   .then(res => console.log("Sent urgent quest:", q.t, "(status " + res.statusCode + ")"))
   .catch(err => {
     console.error("Sending failed:", err.statusCode, err.body || err.message);
@@ -51,4 +70,4 @@ webpush.sendNotification(cfg.subscription, JSON.stringify({ quest: q }), { TTL: 
         "then paste the new code into the PUSH_CONFIG secret.");
     }
     process.exit(1);
-  });
+  }));
