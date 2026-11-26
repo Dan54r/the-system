@@ -3,16 +3,16 @@
 const webpush = require("web-push");
 
 const QUESTS = [
-  { t: "50 PUSH-UPS", xp: 30 },
-  { t: "100 SQUATS", xp: 30 },
-  { t: "3 MIN PLANK", xp: 25, note: "Split it into sets if you need to." },
-  { t: "30 BURPEES", xp: 40 },
-  { t: "20 PULL-UPS", xp: 40 },
-  { t: "50 SIT-UPS", xp: 20 },
-  { t: "60 LUNGES", xp: 25, note: "30 on each leg." },
-  { t: "40 DIPS", xp: 30 },
-  { t: "2 MIN WALL SIT", xp: 20 },
-  { t: "100 JUMPING JACKS", xp: 20 }
+  { t: "20 PUSH-UPS", xp: 25 },
+  { t: "30 SQUATS", xp: 20 },
+  { t: "1 MIN PLANK", xp: 20 },
+  { t: "10 BURPEES", xp: 30 },
+  { t: "5 PULL-UPS", xp: 30 },
+  { t: "20 SIT-UPS", xp: 20 },
+  { t: "20 LUNGES", xp: 20, note: "10 on each leg." },
+  { t: "10 DIPS", xp: 25 },
+  { t: "45 SEC WALL SIT", xp: 20 },
+  { t: "40 JUMPING JACKS", xp: 20 }
 ];
 
 const force = process.env.FORCE === "true";
@@ -55,7 +55,12 @@ try {
 const owner = process.env.GITHUB_REPOSITORY_OWNER || "example";
 webpush.setVapidDetails("https://" + owner.toLowerCase() + ".github.io", cfg.publicKey, cfg.privateKey);
 
-const q = QUESTS[Math.floor(Math.random() * QUESTS.length)];
+// Scheduled quests are picked from the date, so the app can work out the same quest as a backup.
+// Must stay in the same order as URGENT_POOL in index.html.
+const q = Object.assign({}, force
+  ? QUESTS[Math.floor(Math.random() * QUESTS.length)]
+  : QUESTS[hash("quest-" + dateKey) % QUESTS.length]);
+q.id = force ? "test-" + Date.now() : dateKey;
 
 // wait a random 0–40 minutes so it never lands at the same minute
 const delayMs = force ? 0 : Math.floor(Math.random() * 40 * 60 * 1000);

@@ -195,6 +195,36 @@
   @keyframes slideL { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes slideR { from { transform: translateX(-48px); opacity: 0; } to { transform: none; opacity: 1; } }
 
+  /* ---------- timer ---------- */
+  .t-ring { position: relative; width: 240px; height: 240px; margin: 6px auto 4px; }
+  .t-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .t-ring .ring-fg { filter: drop-shadow(0 0 4px var(--glow)); }
+  .t-ring.done .ring-fg { stroke: var(--gold); }
+  .t-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .t-time { font-family: var(--hfont); font-size: 56px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 14px var(--glow); font-variant-numeric: tabular-nums; }
+  .t-state { font-family: var(--hfont); font-size: 11px; letter-spacing: 3px; color: var(--muted); margin-top: 4px; }
+  .t-ring.done .t-time { color: var(--gold); }
+  .t-adjust { display: flex; gap: 8px; margin-top: 10px; }
+  .t-step { flex: 1; padding: 12px; font-size: 13px; letter-spacing: 1px; }
+  .t-step:disabled { opacity: 0.35; }
+  .t-presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+  .t-presets .btn { padding: 11px 0; font-size: 13px; color: var(--muted); border-color: rgba(76,201,255,0.25); }
+  .t-presets .btn.sel { color: #021022; background: linear-gradient(160deg, #3fd2ff, #2a6cff); border-color: #9fe6ff; }
+  .t-main { display: flex; gap: 8px; margin-top: 14px; }
+  .t-main .btn { flex: 1; padding: 16px; font-size: 14px; letter-spacing: 2px; }
+
+  /* ---------- achievements ---------- */
+  .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ach { background: var(--panel2); border: 1px solid rgba(125,155,189,0.25); border-radius: 4px; padding: 10px; opacity: 0.55; }
+  .ach .an { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .ach .ai { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: transparent; flex-shrink: 0; }
+  .ach .ad { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 3px; line-height: 1.25; }
+  .ach .ap { height: 3px; background: rgba(76,201,255,0.12); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .ach .ap div { height: 100%; background: var(--blue); }
+  .ach.got { opacity: 1; border-color: var(--gold); box-shadow: 0 0 10px rgba(255,210,87,0.18); }
+  .ach.got .ai { border-color: var(--gold); background: var(--gold); color: #1a1300; }
+  .ach.got .ap div { background: var(--gold); }
+
   /* ---------- profile ---------- */
   .records { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .rec { background: var(--panel2); border: 1px solid rgba(76,201,255,0.25); border-radius: 4px; padding: 12px 8px; text-align: center; }
@@ -336,6 +366,32 @@
   </div>
 
   <!-- ===== PROFILE TAB ===== -->
+  <!-- ===== TIMER TAB ===== -->
+  <div id="tabTimer" class="hidden">
+    <div class="panel">
+      <div class="ptitle">REST TIMER</div>
+      <div class="t-ring">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="44" fill="none" stroke-width="6"/>
+          <circle class="ring-fg" id="tRing" cx="50" cy="50" r="44" fill="none" stroke-width="6"/>
+        </svg>
+        <div class="t-center">
+          <div class="t-time" id="tTime">3:00</div>
+          <div class="t-state" id="tState">READY</div>
+        </div>
+      </div>
+      <div class="t-adjust">
+        <button class="btn t-step" id="tMinus">− 15s</button>
+        <button class="btn t-step" id="tPlus">+ 15s</button>
+      </div>
+      <div class="t-presets" id="tPresets"></div>
+      <div class="t-main">
+        <button class="btn ghost" id="tReset">RESET</button>
+        <button class="btn primary" id="tStart">START</button>
+      </div>
+    </div>
+  </div>
+
   <div id="tabProfile" class="hidden">
     <div class="panel">
       <div class="ptitle">STATUS</div>
@@ -355,6 +411,12 @@
         <div class="rec"><div class="v" id="recWeeks">0</div><div class="k">Weeks cleared</div></div>
         <div class="rec"><div class="v" id="recSkills">0</div><div class="k">Skills mastered</div></div>
       </div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">ACHIEVEMENTS</div>
+      <div class="note" id="achCount"></div>
+      <div class="ach-grid" id="achGrid"></div>
     </div>
 
     <div class="panel">
@@ -378,6 +440,7 @@
         <button class="btn wide" id="copyBtn">COPY CODE</button>
         <div class="small-note">Paste this into GitHub as a secret called PUSH_CONFIG.</div>
       </div>
+      <div class="small-note" id="lastQuest"></div>
     </div>
   </div>
 </div>
@@ -390,6 +453,10 @@
   <button class="tab" data-tab="skills">
     <svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
     SKILLS
+  </button>
+  <button class="tab" data-tab="timer">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6M12 2v3"/></svg>
+    TIMER
   </button>
   <button class="tab" data-tab="profile">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
@@ -517,7 +584,7 @@
   /* ================= storage ================= */
   const KEY = "gymSystem";
   let state = { days: [], name: "DAN", lastQuest: "", steps: {}, mastered: [],
-                urgent: null, urgentOffer: null, urgentLast: 0, urgentDay: "", urgentCount: 0, bonus: 0 };
+                urgent: null, urgentOffer: null, urgentLast: 0, urgentDay: "", urgentCount: 0, bonus: 0, urgentSeen: null };
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved) state = Object.assign(state, saved);
@@ -731,7 +798,7 @@
 
   function render() {
     renderStatus(); renderQuests(); renderCalendar();
-    renderSkillList(); renderSkillDetail(); renderProfile(); renderUrgent();
+    renderSkillList(); renderSkillDetail(); renderProfile(); renderUrgent(); renderAchievements();
   }
 
   /* ================= urgent quests ================= */
@@ -841,6 +908,7 @@
       buttons: [{ label: "NOT YET", ghost: true }, { label: "YES", primary: true, action: () => {
         const before = player().level;
         state.bonus = (state.bonus || 0) + u.xp;
+        state.urgentDone = (state.urgentDone || 0) + 1;
         state.urgent = null; save(); render();
         sysWindow({ kicker: "QUEST COMPLETE", title: u.t, body: "<span class='hl'>Reward: +" + u.xp + " EXP</span>" });
         levelCheck(before);
@@ -859,8 +927,8 @@
   const urgentSide = () => state.urgent ? giveUpUrgent() : declineOffer();
 
   /* ================= navigation ================= */
-  const TABS = ["quests", "skills", "profile"];
-  const TAB_EL = { quests: "tabQuests", skills: "tabSkills", profile: "tabProfile" };
+  const TABS = ["quests", "skills", "timer", "profile"];
+  const TAB_EL = { quests: "tabQuests", skills: "tabSkills", timer: "tabTimer", profile: "tabProfile" };
   let currentTab = "quests";
   function setTab(t) {
     const dir = TABS.indexOf(t) - TABS.indexOf(currentTab);
@@ -1098,46 +1166,116 @@
   };
   renderNotif();
 
-  if (secure && "serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-    navigator.serviceWorker.addEventListener("message", e => {
-      if (e.data && e.data.type === "check-urgent") checkPendingUrgent();
-    });
+  /* ---------- getting urgent quests from notifications ---------- */
+  const SW_VERSION = 4; // bump to force phones onto a new sw.js
+
+  function cleanQuest(q) {
+    return { t: String(q.t || "20 PUSH-UPS").slice(0, 40).toUpperCase(),
+             xp: Math.min(60, Math.max(10, parseInt(q.xp, 10) || 20)),
+             note: q.note ? String(q.note).slice(0, 80) : "" };
   }
 
-  // a quest that arrived by notification is saved by the service worker; pick it up here
+  // Each quest is only offered once. key = the quest's id from the server.
+  function takeQuest(q, key) {
+    const day = nowKey();
+    if (!state.urgentSeen || state.urgentSeen.day !== day) state.urgentSeen = { day, keys: [] };
+    key = String(key || q.t);
+    if (state.urgentSeen.keys.includes(key)) return;
+    state.urgentSeen.keys.push(key);
+    save();
+    offerUrgent(cleanQuest(q));
+  }
+
+  // Same maths as send-quest.js: today's quest and the hour it gets sent.
+  function hash(s) {
+    let h = 2166136261;
+    for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+    return h >>> 0;
+  }
+  function scheduledToday() {
+    const day = nowKey();
+    return { day, hour: 9 + hash("system-" + day) % 13,
+             quest: URGENT_POOL[hash("quest-" + day) % URGENT_POOL.length] };
+  }
+
+  const pushOn = () => { try { return !!localStorage.getItem("gymPushCode"); } catch (e) { return false; } };
+
   let checkingPending = false;
   async function checkPendingUrgent() {
-    if (checkingPending || !("caches" in window)) return;
+    if (checkingPending) return;
     checkingPending = true;
     try {
-      const cache = await caches.open("system-data");
-      const res = await cache.match("pending-urgent");
-      if (res) {
-        const q = await res.json();
-        await cache.delete("pending-urgent");
-        if (keyOf(new Date(q.at || 0)) === nowKey()) offerUrgent(cleanQuest(q)); // only today's quests count
+      // 1. quest saved by the service worker when the notification arrived
+      if ("caches" in window) {
+        const cache = await caches.open("system-data");
+        const res = await cache.match("pending-urgent");
+        if (res) {
+          const q = await res.json();
+          await cache.delete("pending-urgent");
+          if (keyOf(new Date(q.at || 0)) === nowKey()) takeQuest(q, q.id || q.at);
+        }
+      }
+      // 2. quest still sitting in the phone's notification list
+      if (secure && "serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && reg.getNotifications) {
+          const list = await reg.getNotifications();
+          for (const n of list) {
+            const q = n.data;
+            if (q && q.t && (!q.at || keyOf(new Date(q.at)) === nowKey())) takeQuest(q, q.id || q.at || q.t);
+            n.close();
+          }
+        }
+      }
+      // 3. backup: today's scheduled quest, once its time has passed
+      if (pushOn()) {
+        const s = scheduledToday(), now = new Date();
+        if (now.getHours() > s.hour) takeQuest(s.quest, s.day);
       }
     } catch (e) {}
     checkingPending = false;
   }
+
+  if (secure && "serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js?v=" + SW_VERSION)
+      .then(r => r.update().catch(() => {})).catch(() => {});
+    navigator.serviceWorker.addEventListener("message", e => {
+      if (!e.data) return;
+      if (e.data.type === "check-urgent") checkPendingUrgent();
+      if (e.data.type === "urgent" && e.data.quest) takeQuest(e.data.quest, e.data.quest.id || e.data.quest.t); // old sw.js
+    });
+  }
+
+  // opened from an old-style notification link: ?uq=20%20PUSH-UPS&xp=20
+  const params = new URLSearchParams(location.search);
+  if (params.get("uq")) {
+    const q = { t: params.get("uq"), xp: params.get("xp"), note: params.get("note") };
+    history.replaceState(null, "", location.pathname);
+    takeQuest(q, q.t);
+  }
+
   checkPendingUrgent();
   window.addEventListener("focus", checkPendingUrgent);
   window.addEventListener("pageshow", checkPendingUrgent);
+  setInterval(checkPendingUrgent, 60000);
 
-  function cleanQuest(q) {
-    return { t: String(q.t || "50 PUSH-UPS").slice(0, 40).toUpperCase(),
-             xp: Math.min(60, Math.max(10, parseInt(q.xp, 10) || 30)),
-             note: q.note ? String(q.note).slice(0, 80) : "" };
+  // Profile: show when this phone last received a quest (helps spot problems)
+  async function renderLastQuest() {
+    const el = $("lastQuest"); if (!el) return;
+    let txt = "No quest received on this phone yet.";
+    try {
+      const res = await (await caches.open("system-data")).match("last-urgent");
+      if (res) {
+        const q = await res.json();
+        txt = "Last quest received: " + q.t + ", " +
+          new Date(q.at).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+      }
+    } catch (e) {}
+    el.textContent = txt;
   }
-
-  // opened by tapping a notification: ?uq=50%20PUSH-UPS&xp=30
-  const params = new URLSearchParams(location.search);
-  if (params.get("uq")) {
-    const q = cleanQuest({ t: params.get("uq"), xp: params.get("xp"), note: params.get("note") });
-    history.replaceState(null, "", location.pathname);
-    offerUrgent(q);
-  }
+  renderLastQuest();
+  setInterval(renderLastQuest, 60000);
 
   /* urgent quests: a chance shortly after opening, then random checks every minute */
   $("uDone").onclick = $("u2Done").onclick = urgentMain;
@@ -1146,10 +1284,182 @@
   setInterval(() => { maybeUrgent(0.2); renderUrgent(); }, 60000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      checkPendingUrgent();
+      checkPendingUrgent(); renderLastQuest();
       setTimeout(() => maybeUrgent(0.5), 3000);
     }
   });
+  /* ================= rest timer ================= */
+  const T_MIN = 60, T_MAX = 300, T_STEP = 15;
+  const T_RING = 2 * Math.PI * 44;
+  let tLength = 180;            // chosen rest length in seconds
+  try { const v = parseInt(localStorage.getItem("gymRest"), 10); if (v >= T_MIN && v <= T_MAX) tLength = v; } catch (e) {}
+  let tEnd = null;              // when the running timer finishes (ms)
+  let tLeftPaused = null;       // seconds left while paused
+  let tTick = null, tAlerted = false, audioCtx = null;
+
+  const fmt = sec => Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+
+  function tRemaining() {
+    if (tEnd) return Math.max(0, Math.ceil((tEnd - Date.now()) / 1000));
+    if (tLeftPaused !== null) return tLeftPaused;
+    return tLength;
+  }
+
+  function renderTimer() {
+    const left = tRemaining();
+    const running = !!tEnd, paused = tLeftPaused !== null, finished = running && left === 0;
+    $("tTime").textContent = fmt(left);
+    $("tState").textContent = finished ? "REST OVER" : running ? "RESTING" : paused ? "PAUSED" : "READY";
+    $("tRing").style.strokeDasharray = T_RING;
+    $("tRing").style.strokeDashoffset = T_RING * (1 - left / tLength);
+    document.querySelector(".t-ring").classList.toggle("done", finished);
+    $("tStart").textContent = finished ? "AGAIN" : running ? "PAUSE" : paused ? "RESUME" : "START";
+    const idle = !running && !paused;
+    $("tMinus").disabled = !idle || tLength <= T_MIN;
+    $("tPlus").disabled = !idle || tLength >= T_MAX;
+    document.querySelectorAll("#tPresets .btn").forEach(b => {
+      b.classList.toggle("sel", +b.dataset.s === tLength);
+      b.disabled = !idle;
+    });
+  }
+
+  function setLength(sec) {
+    tLength = Math.min(T_MAX, Math.max(T_MIN, sec));
+    try { localStorage.setItem("gymRest", tLength); } catch (e) {}
+    renderTimer();
+  }
+
+  function beep() {
+    try {
+      if (!audioCtx) return;
+      [0, 0.35, 0.7].forEach(off => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = "square"; o.frequency.value = 880;
+        g.gain.setValueAtTime(0.15, audioCtx.currentTime + off);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + off + 0.25);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(audioCtx.currentTime + off); o.stop(audioCtx.currentTime + off + 0.25);
+      });
+    } catch (e) {}
+  }
+
+  function timerLoop() {
+    renderTimer();
+    if (tEnd && tRemaining() === 0 && !tAlerted) {
+      tAlerted = true;
+      clearInterval(tTick); tTick = null;
+      beep();
+      try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {}
+      sysWindow({ kicker: "REST TIMER", title: "REST OVER", body: "Next set. Go." });
+    }
+  }
+
+  function startTimer() {
+    // unlock sound on iPhone: it has to be started from a tap
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) {}
+    const secs = tLeftPaused !== null ? tLeftPaused : tLength;
+    tEnd = Date.now() + secs * 1000;
+    tLeftPaused = null; tAlerted = false;
+    clearInterval(tTick); tTick = setInterval(timerLoop, 250);
+    renderTimer();
+  }
+
+  function pauseTimer() {
+    tLeftPaused = tRemaining();
+    tEnd = null;
+    clearInterval(tTick); tTick = null;
+    renderTimer();
+  }
+
+  function resetTimer() {
+    tEnd = null; tLeftPaused = null; tAlerted = false;
+    clearInterval(tTick); tTick = null;
+    renderTimer();
+  }
+
+  $("tStart").onclick = () => {
+    const finished = tEnd && tRemaining() === 0;
+    if (finished) { resetTimer(); startTimer(); }
+    else if (tEnd) pauseTimer();
+    else startTimer();
+  };
+  $("tReset").onclick = resetTimer;
+  $("tMinus").onclick = () => setLength(tLength - T_STEP);
+  $("tPlus").onclick = () => setLength(tLength + T_STEP);
+  $("tPresets").innerHTML = [60, 120, 180, 240, 300]
+    .map(sec => '<button class="btn" data-s="' + sec + '">' + (sec / 60) + 'm</button>').join("");
+  document.querySelectorAll("#tPresets .btn").forEach(b => b.onclick = () => setLength(+b.dataset.s));
+  // the countdown keeps going while the phone is locked; catch up when you come back
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") timerLoop(); });
+  renderTimer();
+
+  /* ================= achievements ================= */
+  function trainingStats() {
+    const days = [...done].map(fromKey).filter(d => d <= today).sort((a, b) => a - b);
+    let bestStreak = 0, run = 0;
+    days.forEach((d, i) => {
+      run = (i > 0 && dayDiff(days[i - 1], d) - 1 <= MAX_REST) ? run + 1 : 1;
+      if (run > bestStreak) bestStreak = run;
+    });
+    // longest run of cleared weeks in a row
+    let bestWeeks = 0, wrun = 0;
+    if (days.length) {
+      for (let ws = weekStart(days[0]); ws <= weekStart(today); ws = addDays(ws, 7)) {
+        if (countWeek(ws) >= WEEK_GOAL) { wrun++; if (wrun > bestWeeks) bestWeeks = wrun; }
+        else if (ws < weekStart(today)) wrun = 0; // the current week can still be cleared
+      }
+    }
+    return { sessions: days.length, bestStreak, bestWeeks, cleared: weekSummary().cleared,
+             skills: state.mastered.length, urgent: state.urgentDone || 0, level: player().level };
+  }
+
+  function achList() {
+    return [
+      { id: "s1",   n: "First Step",       d: "Log your first session",          k: "sessions",   g: 1 },
+      { id: "s10",  n: "Getting Started",  d: "10 sessions",                     k: "sessions",   g: 10 },
+      { id: "s50",  n: "Dedicated",        d: "50 sessions",                     k: "sessions",   g: 50 },
+      { id: "s100", n: "Iron Will",        d: "100 sessions",                    k: "sessions",   g: 100 },
+      { id: "st7",  n: "On Fire",          d: "Streak of 7 sessions",            k: "bestStreak", g: 7 },
+      { id: "st20", n: "Unbreakable",      d: "Streak of 20 sessions",           k: "bestStreak", g: 20 },
+      { id: "w1",   n: "Quest Cleared",    d: "Clear a weekly quest",            k: "cleared",    g: 1 },
+      { id: "w4",   n: "Consistent",       d: "4 weekly quests in a row",        k: "bestWeeks",  g: 4 },
+      { id: "w10",  n: "10-Week Streak",   d: "10 weekly quests in a row",       k: "bestWeeks",  g: 10 },
+      { id: "w26",  n: "Half a Year",      d: "26 weekly quests in a row",       k: "bestWeeks",  g: 26 },
+      { id: "k1",   n: "Skill Acquired",   d: "Master your first skill",         k: "skills",     g: 1 },
+      { id: "k5",   n: "Skill Collector",  d: "Master 5 skills",                 k: "skills",     g: 5 },
+      { id: "k9",   n: "Grandmaster",      d: "Master every skill",              k: "skills",     g: 9 },
+      { id: "u1",   n: "Answer the Call",  d: "Complete an urgent quest",        k: "urgent",     g: 1 },
+      { id: "u10",  n: "Quest Hunter",     d: "Complete 10 urgent quests",       k: "urgent",     g: 10 },
+      { id: "l5",   n: "Level 5",          d: "Reach level 5",                   k: "level",      g: 5 },
+      { id: "l10",  n: "Level 10",         d: "Reach level 10",                  k: "level",      g: 10 }
+    ];
+  }
+
+  function renderAchievements() {
+    const st = trainingStats(), list = achList();
+    const got = list.filter(a => st[a.k] >= a.g);
+    $("achCount").textContent = got.length + " / " + list.length + " unlocked";
+    $("achGrid").innerHTML = list.map(a => {
+      const v = Math.min(st[a.k], a.g), ok = v >= a.g;
+      return '<div class="ach' + (ok ? " got" : "") + '"><div class="an"><span class="ai">✓</span>' + a.n + '</div>' +
+        '<div class="ad">' + a.d + (ok || a.g === 1 ? "" : " · " + v + "/" + a.g) + '</div>' +
+        '<div class="ap"><div style="width:' + (v / a.g * 100) + '%"></div></div></div>';
+    }).join("");
+
+    // announce newly unlocked ones (the first time, existing ones are recorded quietly)
+    const first = !Array.isArray(state.achSeen);
+    if (first) state.achSeen = [];
+    const fresh = got.filter(a => !state.achSeen.includes(a.id));
+    if (fresh.length) {
+      fresh.forEach(a => state.achSeen.push(a.id));
+      save();
+      if (!first) fresh.forEach(a => sysWindow({ kicker: "ACHIEVEMENT UNLOCKED", tone: "gold", title: a.n.toUpperCase(), body: a.d }));
+    } else if (first) save();
+  }
+  renderAchievements();
 </script>
 </body>
 </html>
